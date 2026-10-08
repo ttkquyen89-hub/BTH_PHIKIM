@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng Tuần Hoàn Các Nguyên Tố Hóa Học - Tương Tác</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --text-main: #2c3e50;
+            
+            /* Màu nhóm nguyên tố */
+            --color-metal: #d0e8f2;
+            --color-nonmetal: #fcd5ce;
+            --color-noble: #fdf0d5;
+            
+            /* Màu viền/chữ tối hơn cho dễ đọc */
+            --border-metal: #89c4d9;
+            --border-nonmetal: #f09a8e;
+            --border-noble: #f2c76e;
+
+            /* Màu phát sáng */
+            --glow-metal: rgba(52, 152, 219, 0.9);
+            --glow-nonmetal: rgba(231, 76, 60, 0.9);
+            --glow-noble: rgba(241, 196, 15, 0.9);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Roboto', Arial, sans-serif;
+            user-select: none; /* Ngăn bôi đen text khi vuốt */
+        }
+
+        /* Đảm bảo toàn bộ ứng dụng nằm trọn vẹn trong 1 màn hình */
+        html, body {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh; /* Tốt hơn cho Mobile Safari */
+            overflow: hidden; /* Chống cuộn trang hoàn toàn */
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header-area {
+            width: 100%;
+            text-align: center;
+            padding: 1vh 0;
+        }
+
+        h1 {
+            font-size: clamp(18px, 2.5vh, 28px);
+            color: #1a252f;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1vh;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 0.5vh;
+        }
+
+        .btn {
+            padding: 1vh 2vw;
+            font-size: clamp(11px, 1.2vh, 14px);
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-all { background: #fff; color: #333; border: 1px solid #ccc; }
+        .btn-metal { background: var(--color-metal); color: #1c5268; border: 1px solid var(--border-metal); }
+        .btn-nonmetal { background: var(--color-nonmetal); color: #8e2b1d; border: 1px solid var(--border-nonmetal); }
+        .btn-noble { background: var(--color-noble); color: #8a6411; border: 1px solid var(--border-noble); }
+        .btn-reset { background: #e0e0e0; color: #333; }
+        .btn-quiz { background: #8e44ad; color: #fff; }
+
+        .table-wrapper {
+            flex: 1;
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            padding: 0.5vh 1vw 1.5vh 1vw;
+            min-height: 0;
+        }
+
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(55px, 1fr));
+            grid-gap: 6px;
+            position: relative;
+            min-width: 1050px;
+            margin: 0 auto;
+        }
+
+        .group-label {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #2c3e50;
+            padding-bottom: 5px;
+            grid-row: 1;
+        }
+
+        /* Khối thông tin học tập hiển thị khi chọn nhóm */
+        #info-panel {
+            grid-column: 3 / 13;
+            grid-row: 2 / 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            padding: 1vw;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px dashed #bdc3c7;
+            pointer-events: none;
+            margin: 1vh 2vw;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+
+        #info-panel h2 {
+            font-size: clamp(16px, 2.5vh, 24px);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        #info-panel p {
+            font-size: clamp(12px, 1.8vh, 16px);
+            line-height: 1.4;
+            color: #34495e;
+        }
+
+        .element {
+            position: relative;
+            background: #fff;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #ddd;
+            overflow: hidden; /* Cần thiết để chứa vệt sáng lấp lánh */
+            width: 100%;
+            height: 100%;
+            padding: 2%;
+        }
+
+        .element[data-category="metal"] { background: var(--color-metal); border-color: var(--border-metal); --glow-color: var(--glow-metal); }
+        .element[data-category="nonmetal"] { background: var(--color-nonmetal); border-color: var(--border-nonmetal); --glow-color: var(--glow-nonmetal); }
+        .element[data-category="noble"] { background: var(--color-noble); border-color: var(--border-noble); --glow-color: var(--glow-noble); }
+        .element[data-category="placeholder"] { background: #e0e0e0; border-color: #bdc3c7; cursor: default; }
+
+        /* Typography tự động co giãn theo viewport */
+        .element .atomic-number {
+            font-size: clamp(7px, 1.1vh, 12px);
+            align-self: flex-start;
+            font-weight: bold;
+            color: rgba(0,0,0,0.6);
+            margin-left: 2px;
+        }
+
+        .element .symbol {
+            font-size: clamp(12px, 2.8vh, 26px);
+            font-weight: 900;
+            color: #111;
+            margin: auto 0;
+        }
+
+        .element .name {
+            font-size: clamp(5px, 0.9vh, 10px);
+            text-align: center;
+            color: rgba(0,0,0,0.8);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 95%;
+            margin-bottom: 2px;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            z-index: 100;
+        }
+        /* Chỉ hiện tooltip trên Desktop khi hover (không có hiệu ứng mờ) */
+        @media (hover: hover) {
+            .element:hover:not(.dim) .tooltip {
+                opacity: 1;
+                visibility: visible;
+            }
+            .element:hover:not(.dim):not([data-category="placeholder"]) {
+                transform: scale(1.1);
+                z-index: 40;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            }
+        }
+
+        .element.dim {
+            opacity: 0.25;
+            filter: grayscale(60%);
+        }
+
+        /* Hiệu ứng chọn nhóm: Sáng dịu, dễ nhìn */
+        .element.sparkle {
+            z-index: 50;
+            border: 2px solid var(--glow-color);
+            box-shadow: 
+                0 0 12px var(--glow-color), 
+                0 0 25px var(--glow-color);
+            animation: breath-sparkle 1.5s infinite alternate;
+        }
+
+        @keyframes breath-sparkle {
+            from { filter: brightness(1.02); transform: scale(1.02); }
+            to { filter: brightness(1.1); transform: scale(1.06); }
+        }
+
+        /* Hiệu ứng chọn sai (Rung lắc + Báo đỏ) */
+        @keyframes shake-red {
+            0%, 100% { transform: translateX(0); border-color: inherit; }
+            25% { transform: translateX(-4px); border-color: #e74c3c; background-color: #fadbd8; }
+            50% { transform: translateX(4px); border-color: #e74c3c; background-color: #fadbd8; }
+            75% { transform: translateX(-4px); border-color: #e74c3c; background-color: #fadbd8; }
+        }
+        .element.wrong-answer {
+            animation: shake-red 0.4s ease-in-out;
+            z-index: 60;
+        }
+
+        /* Chú giải */
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: clamp(12px, 1.5vh, 14px);
+            font-weight: bold;
+            padding-bottom: 1vh;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        .legend-box { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.2); }
+        .bg-metal { background: var(--color-metal); }
+        .bg-nonmetal { background: var(--color-nonmetal); }
+        .bg-noble { background: var(--color-noble); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        
+        .modal-content {
+            background: #fff;
+            width: 90%;
+            max-width: 360px;
+            border-radius: 16px;
+            padding: 30px;
+            position: relative;
+            text-align: center;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        .modal-overlay.show .modal-content { transform: translateY(0); }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: #eee;
+            border: none;
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:hover { background: #ff7675; color: #fff; }
+        
+        .modal-element-box {
+            width: 100px; height: 100px;
+            margin: 0 auto 20px auto;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #ccc;
+        }
+        .modal-sym { font-size: 40px; font-weight: 900; line-height: 1; }
+        .modal-z { font-size: 16px; font-weight: bold; margin-bottom: 5px; opacity: 0.7; }
+        .modal-details { text-align: left; margin-top: 20px; font-size: 15px; line-height: 1.8; }
+        .modal-details span { font-weight: bold; color: #2c3e50; }
+
+        /* Quiz Modal riêng biệt */
+        .quiz-options { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+        .quiz-btn { padding: 12px; border: 2px solid #ecf0f1; background: #fff; border-radius: 8px; cursor: pointer; font-size: 15px; transition: all 0.2s; }
+        .quiz-btn:hover { border-color: #8e44ad; background: #f9f2fb; }
+        #quiz-result { font-weight: bold; font-size: 16px; min-height: 48px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-area">
+        <h1>Bảng Tuần Hoàn Các Nguyên Tố Hóa Học</h1>
+        <div class="controls">
+            <button class="btn btn-all" id="btn-all">TẤT CẢ</button>
+            <button class="btn btn-metal" id="btn-metal">KIM LOẠI</button>
+            <button class="btn btn-nonmetal" id="btn-nonmetal">PHI KIM</button>
+            <button class="btn btn-noble" id="btn-noble">KHÍ HIẾM</button>
+            <button class="btn btn-reset" id="btn-reset">↻ ĐẶT LẠI</button>
+            <button class="btn btn-quiz" id="btn-quiz-toggle">CHẾ ĐỘ KHÁM PHÁ</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <div class="periodic-table" id="periodic-table">
+            <!-- Panel thông báo -->
+            <div id="info-panel">
+                <h2 id="info-title"></h2>
+                <p id="info-desc"></p>
+            </div>
+            <!-- Elements Generated by JS -->
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item" onclick="filterElements('metal')" onmouseenter="filterElements('metal')">
+            <div class="legend-box bg-metal"></div> KIM LOẠI
+        </div>
+        <div class="legend-item" onclick="filterElements('nonmetal')" onmouseenter="filterElements('nonmetal')">
+            <div class="legend-box bg-nonmetal"></div> PHI KIM
+        </div>
+        <div class="legend-item" onclick="filterElements('noble')" onmouseenter="filterElements('noble')">
+            <div class="legend-box bg-noble"></div> KHÍ HIẾM
+        </div>
+    </div>
+
+    <!-- Modal Quiz -->
+    <div class="modal-overlay" id="quiz-modal">
+        <div class="modal-content" style="max-width: 500px; border-top: 6px solid #8e44ad;">
+            <button class="close-btn" id="close-quiz">X</button>
+            <h3 style="margin-bottom: 15px; color: #2c3e50; font-size: 20px;">Khám phá Bảng Tuần Hoàn</h3>
+            <p>Em hãy quan sát vị trí của <strong>Phi kim</strong> (Màu hồng).</p>
+            <p>Phi kim chủ yếu nằm ở khu vực nào?</p>
+            <div class="quiz-options">
+                <button class="quiz-btn" onclick="checkAnswer('A')">A. Phía dưới bên trái</button>
+                <button class="quiz-btn" onclick="checkAnswer('B')">B. Phía trên bên phải</button>
+                <button class="quiz-btn" onclick="checkAnswer('C')">C. Chính giữa bảng</button>
+            </div>
+            <div id="quiz-result"></div>
+        </div>
+    </div>
+
+    <!-- Modal Chi tiết Nguyên tố -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" id="close-modal">X</button>
+            <div class="modal-element-box" id="modal-box">
+                <div class="modal-z" id="m-z">1</div>
+                <div class="modal-sym" id="m-sym">H</div>
+            </div>
+            <h2 id="m-name" style="text-transform: capitalize; margin-bottom: 5px;">Hydrogen</h2>
+            <div style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;" id="m-cat">Phi kim</div>
+            <div class="modal-details">
+                <div><span>Số hiệu nguyên tử:</span> <span id="m-z-detail" style="font-weight: normal;">1</span></div>
+                <div><span>Ký hiệu hóa học:</span> <span id="m-sym-detail" style="font-weight: normal;">H</span></div>
+                <div><span>Nhóm:</span> <span id="m-group" style="font-weight: normal;">1</span></div>
+                <div><span>Chu kỳ:</span> <span id="m-period" style="font-weight: normal;">1</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const elementsRaw = [
+            // Chu kỳ 1, 2, 3
+            [1,"H","hydrogen",2,1,1], [2,"He","helium",3,18,1], [3,"Li","lithium",1,1,2], [4,"Be","beryllium",1,2,2],
+            [5,"B","boron",2,13,2], [6,"C","carbon",2,14,2], [7,"N","nitrogen",2,15,2], [8,"O","oxygen",2,16,2],
+            [9,"F","fluorine",2,17,2], [10,"Ne","neon",3,18,2], [11,"Na","sodium",1,1,3], [12,"Mg","magnesium",1,2,3],
+            [13,"Al","aluminum",1,13,3], [14,"Si","silicon",2,14,3], [15,"P","phosphorus",2,15,3], [16,"S","sulfur",2,16,3],
+            [17,"Cl","chlorine",2,17,3], [18,"Ar","argon",3,18,3], 
+            // Chu kỳ 4
+            [19,"K","potassium",1,1,4], [20,"Ca","calcium",1,2,4], [21,"Sc","scandium",1,3,4], [22,"Ti","titanium",1,4,4], 
+            [23,"V","vanadium",1,5,4], [24,"Cr","chromium",1,6,4], [25,"Mn","manganese",1,7,4], [26,"Fe","iron",1,8,4], 
+            [27,"Co","cobalt",1,9,4], [28,"Ni","nickel",1,10,4], [29,"Cu","copper",1,11,4], [30,"Zn","zinc",1,12,4], 
+            [31,"Ga","gallium",1,13,4], [32,"Ge","germanium",1,14,4], [33,"As","arsenic",2,15,4], [34,"Se","selenium",2,16,4], 
+            [35,"Br","bromine",2,17,4], [36,"Kr","krypton",3,18,4], 
+            // Chu kỳ 5
+            [37,"Rb","rubidium",1,1,5], [38,"Sr","strontium",1,2,5], [39,"Y","yttrium",1,3,5], [40,"Zr","zirconium",1,4,5], 
+            [41,"Nb","niobium",1,5,5], [42,"Mo","molybdenum",1,6,5], [43,"Tc","technetium",1,7,5], [44,"Ru","ruthenium",1,8,5], 
+            [45,"Rh","rhodium",1,9,5], [46,"Pd","palladium",1,10,5], [47,"Ag","silver",1,11,5], [48,"Cd","cadmium",1,12,5], 
+            [49,"In","indium",1,13,5], [50,"Sn","tin",1,14,5], [51,"Sb","antimony",1,15,5], [52,"Te","tellurium",2,16,5], 
+            [53,"I","iodine",2,17,5], [54,"Xe","xenon",3,18,5], 
+            // Chu kỳ 6
+            [55,"Cs","caesium",1,1,6], [56,"Ba","barium",1,2,6],
+            // Lanthanides (chuyển xuống dòng 9)
+            [57,"La","lanthanum",1,4,9], [58,"Ce","cerium",1,5,9], [59,"Pr","praseodymium",1,6,9], [60,"Nd","neodymium",1,7,9], 
+            [61,"Pm","promethium",1,8,9], [62,"Sm","samarium",1,9,9], [63,"Eu","europium",1,10,9], [64,"Gd","gadolinium",1,11,9], 
+            [65,"Tb","terbium",1,12,9], [66,"Dy","dysprosium",1,13,9], [67,"Ho","holmium",1,14,9], [68,"Er","erbium",1,15,9], 
+            [69,"Tm","thulium",1,16,9], [70,"Yb","ytterbium",1,17,9], [71,"Lu","lutetium",1,18,9],
+            // Tiếp tục Chu kỳ 6
+            [72,"Hf","hafnium",1,4,6], [73,"Ta","tantalum",1,5,6], [74,"W","tungsten",1,6,6], [75,"Re","rhenium",1,7,6], 
+            [76,"Os","osmium",1,8,6], [77,"Ir","iridium",1,9,6], [78,"Pt","platinum",1,10,6], [79,"Au","gold",1,11,6], 
+            [80,"Hg","mercury",1,12,6], [81,"Tl","thallium",1,13,6], [82,"Pb","lead",1,14,6], [83,"Bi","bismuth",1,15,6], 
+            [84,"Po","polonium",1,16,6], [85,"At","astatine",2,17,6], [86,"Rn","radon",3,18,6], 
+            // Chu kỳ 7
+            [87,"Fr","francium",1,1,7], [88,"Ra","radium",1,2,7],
+            // Actinides (chuyển xuống dòng 10)
+            [89,"Ac","actinium",1,4,10], [90,"Th","thorium",1,5,10], [91,"Pa","protactinium",1,6,10], [92,"U","uranium",1,7,10], 
+            [93,"Np","neptunium",1,8,10], [94,"Pu","plutonium",1,9,10], [95,"Am","americium",1,10,10], [96,"Cm","curium",1,11,10], 
+            [97,"Bk","berkelium",1,12,10], [98,"Cf","californium",1,13,10], [99,"Es","einsteinium",1,14,10], [100,"Fm","fermium",1,15,10], 
+            [101,"Md","mendelevium",1,16,10], [102,"No","nobelium",1,17,10], [103,"Lr","lawrencium",1,18,10],
+            // Tiếp tục Chu kỳ 7
+            [104,"Rf","rutherfordium",1,4,7], [105,"Db","dubnium",1,5,7], [106,"Sg","seaborgium",1,6,7], [107,"Bh","bohrium",1,7,7], 
+            [108,"Hs","hassium",1,8,7], [109,"Mt","meitnerium",1,9,7], [110,"Ds","darmstadtium",1,10,7], [111,"Rg","roentgenium",1,11,7], 
+            [112,"Cn","copernicium",1,12,7], [113,"Nh","nihonium",1,13,7], [114,"Fl","flerovium",1,14,7], [115,"Mc","moscovium",1,15,7], 
+            [116,"Lv","livermorium",1,16,7], [117,"Ts","tennessine",1,17,7], [118,"Og","oganesson",3,18,7]
+        ];
+
+        const catMap = { 1: "metal", 2: "nonmetal", 3: "noble" };
+        const tableContainer = document.getElementById('periodic-table');
+
+        // Khởi tạo bảng
+        function initTable() {
+            const groupHeaders = [
+                {col: '1', row: 1, text: "IA"}, {col: '2', row: 2, text: "IIA"}, {col: '3', row: 4, text: "IIIB"},
+                {col: '4', row: 4, text: "IVB"}, {col: '5', row: 4, text: "VB"}, {col: '6', row: 4, text: "VIB"},
+                {col: '7', row: 4, text: "VIIB"}, {col: '8 / 11', row: 4, text: "VIIIB"},
+                {col: '11', row: 4, text: "IB"}, {col: '12', row: 4, text: "IIB"}, {col: '13', row: 2, text: "IIIA"},
+                {col: '14', row: 2, text: "IVA"}, {col: '15', row: 2, text: "VA"}, {col: '16', row: 2, text: "VIA"},
+                {col: '17', row: 2, text: "VIIA"}, {col: '18', row: 1, text: "VIIIA"}
+            ];
+
+            groupHeaders.forEach(header => {
+                const div = document.createElement('div');
+                div.className = 'group-label';
+                div.style.gridColumn = header.col;
+                div.style.gridRow = header.row;
+                div.innerText = header.text;
+                tableContainer.appendChild(div);
+            });
+
+            elementsRaw.forEach(e => {
+                const [z, sym, name, catNum, col, row] = e;
+                const cat = catMap[catNum];
+                const actualRow = row + 1; // Dịch xuống 1 hàng để chừa chỗ cho nhãn nhóm
+
+                const elDiv = document.createElement('div');
+                elDiv.className = 'element';
+                elDiv.dataset.category = cat;
+                elDiv.dataset.z = z;
+                elDiv.dataset.sym = sym;
+                elDiv.dataset.name = name;
+                elDiv.dataset.group = (row >= 9) ? 'Lanthanides/Actinides' : col;
+                elDiv.dataset.period = (row === 9) ? 6 : (row === 10) ? 7 : row;
+                
+                elDiv.style.gridColumn = col;
+                elDiv.style.gridRow = actualRow;
+
+                elDiv.innerHTML = `
+                    <div class="atomic-number">${z}</div>
+                    <div class="symbol">${sym}</div>
+                    <div class="name">${name}</div>
+                    <div class="tooltip">${name} – ${sym} – Số hiệu: ${z}</div>
+                `;
+
+                // Xử lý sự kiện nhấp (Click) trực tiếp vào nguyên tố
+                elDiv.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    if(cat === 'nonmetal') {
+                        if (elDiv.classList.contains('sparkle')) {
+                            openModal(elDiv.dataset);
+                        } else {
+                            elDiv.classList.add('sparkle');
+                        }
+                    } else {
+                        triggerWrongAnimation(elDiv);
+                    }
+                });
+
+                tableContainer.appendChild(elDiv);
+            });
+
+            // Thêm các placeholder cho vùng La-Lu và Ac-Lr (cũng phải dịch xuống 1 hàng)
+            createPlaceholder("57-71", 3, 7);
+            createPlaceholder("89-103", 3, 8);
+        }
+
+        function createPlaceholder(text, col, row) {
+            const div = document.createElement('div');
+            div.className = 'element';
+            div.dataset.category = 'placeholder';
+            div.style.gridColumn = col;
+            div.style.gridRow = row;
+            div.innerHTML = `<div class="symbol" style="font-size: clamp(8px, 1.5vh, 16px);">${text}</div>`;
+            tableContainer.appendChild(div);
+        }
+
+        let isMouseDown = false;
+
+        // Lắng nghe trạng thái thao tác chuột toàn cục
+        document.addEventListener('mousedown', (e) => { if (e.button === 0) isMouseDown = true; });
+        document.addEventListener('mouseup', () => isMouseDown = false);
+
+        // Hỗ trợ cảm ứng (touch) để vuốt như cọ vẽ trên màn hình điện thoại
+        tableContainer.addEventListener('touchstart', () => { isMouseDown = true; }, {passive: true});
+        document.addEventListener('touchend', () => { isMouseDown = false; });
+        document.addEventListener('touchcancel', () => { isMouseDown = false; });
+
+        tableContainer.addEventListener('touchmove', (e) => {
+            if (!isMouseDown) return;
+            const touch = e.touches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            const el = target?.closest('.element:not([data-category="placeholder"])');
+            if (el) {
+                handleElementInteraction(el, false);
+            }
+        }, {passive: true});
+
+        // Hàm xử lý tương tác độc lập (Nhấp/Quét cọ)
+        function handleElementInteraction(el, isClick) {
+            // Tắt bảng hướng dẫn giữa màn hình để không che khuất
+            document.getElementById('info-panel').style.opacity = 0;
+
+            if (el.dataset.category === 'nonmetal') {
+                // ĐÚNG LÀ PHI KIM
+                if (isClick && el.classList.contains('sparkle')) {
+                    // Nếu nhấp vào ô ĐÃ SÁNG -> Hiện bảng chi tiết
+                    openModal(el.dataset);
+                } else {
+                    // Nếu ô chưa sáng (hoặc quét qua) -> Bật sáng
+                    el.classList.add('sparkle');
+                }
+            } else {
+                // SAI (KIM LOẠI, KHÍ HIẾM)
+                // Cản tình trạng thêm class liên tục, phải đợi hết nháy đỏ 0.4s
+                if (!el.classList.contains('wrong-answer')) {
+                    el.classList.remove('wrong-answer');
+                    void el.offsetWidth; // Reset trigger animation CSS
+                    el.classList.add('wrong-answer');
+                    
+                    // Tự động gỡ nháy đỏ sau 400ms
+                    setTimeout(() => el.classList.remove('wrong-answer'), 400);
+                }
+            }
+        }
+
+        function filterElements(category) {
+            const elements = document.querySelectorAll('.element:not([data-category="placeholder"])');
+            const infoPanel = document.getElementById('info-panel');
+            const infoTitle = document.getElementById('info-title');
+            const infoDesc = document.getElementById('info-desc');
+
+            elements.forEach(el => {
+                el.classList.remove('sparkle', 'dim');
+                if (category !== 'all') {
+                    if (el.dataset.category === category) {
+                        el.classList.add('sparkle');
+                    } else {
+                        el.classList.add('dim');
+                    }
+                }
+            });
+
+            // Cập nhật bảng giảng dạy
+            if (category === 'nonmetal') {
+                infoTitle.style.color = 'var(--glow-nonmetal)';
+                infoTitle.innerHTML = "VÙNG PHI KIM";
+                infoDesc.innerHTML = "<strong>QUAN SÁT:</strong> Các phi kim (hồng) rực sáng tập trung chủ yếu ở phía trên - bên phải bảng tuần hoàn.";
+                infoPanel.style.opacity = 1;
+                infoPanel.style.borderColor = 'var(--border-nonmetal)';
+            } else if (category === 'metal') {
+                infoTitle.style.color = 'var(--glow-metal)';
+                infoTitle.innerHTML = "VÙNG KIM LOẠI";
+                infoDesc.innerHTML = "<strong>QUAN SÁT:</strong> Kim loại (xanh dương) chiếm đa số, phủ khắp bên trái, miền giữa và đáy bảng.";
+                infoPanel.style.opacity = 1;
+                infoPanel.style.borderColor = 'var(--border-metal)';
+            } else if (category === 'noble') {
+                infoTitle.style.color = '#d4ac0d';
+                infoTitle.innerHTML = "KHÍ HIẾM";
+                infoDesc.innerHTML = "<strong>QUAN SÁT:</strong> Khí hiếm (vàng) nằm trọn vẹn ở cột Nhóm 18 ngoài cùng bên phải.";
+                infoPanel.style.opacity = 1;
+                infoPanel.style.borderColor = 'var(--border-noble)';
+            } else {
+                infoPanel.style.opacity = 0;
+            }
+        }
+
+        // Nút điều khiển
+        const btnAll = document.getElementById('btn-all');
+        const btnMetal = document.getElementById('btn-metal');
+        const btnNonmetal = document.getElementById('btn-nonmetal');
+        const btnNoble = document.getElementById('btn-noble');
+        const btnReset = document.getElementById('btn-reset');
+
+        btnAll.addEventListener('click', () => filterElements('all'));
+        btnAll.addEventListener('mouseenter', () => filterElements('all'));
+
+        btnMetal.addEventListener('click', () => filterElements('metal'));
+        btnMetal.addEventListener('mouseenter', () => filterElements('metal'));
+
+        btnNonmetal.addEventListener('click', () => filterElements('nonmetal'));
+        btnNonmetal.addEventListener('mouseenter', () => filterElements('nonmetal'));
+
+        btnNoble.addEventListener('click', () => filterElements('noble'));
+        btnNoble.addEventListener('mouseenter', () => filterElements('noble'));
+
+        btnReset.addEventListener('click', () => {
+            filterElements('all');
+        });
+
+        // Chế độ khám phá (Quiz Modal)
+        const quizModal = document.getElementById('quiz-modal');
+        document.getElementById('btn-quiz-toggle').addEventListener('click', () => {
+            quizModal.classList.add('show');
+            document.getElementById('quiz-result').innerHTML = '';
+        });
+        document.getElementById('close-quiz').addEventListener('click', () => quizModal.classList.remove('show'));
+
+        function checkAnswer(ans) {
+            const resultDiv = document.getElementById('quiz-result');
+            if (ans === 'B') {
+                resultDiv.innerHTML = "🎉 Tuyệt vời! Rất chính xác.<br>Đóng bảng này lại và xem hiệu ứng nhé!";
+                resultDiv.style.color = "#27ae60";
+                setTimeout(() => {
+                    quizModal.classList.remove('show');
+                    filterElements('nonmetal');
+                }, 2000);
+            } else {
+                resultDiv.innerHTML = "❌ Chưa chính xác.<br>Em hãy thử quan sát lại xem nào!";
+                resultDiv.style.color = "#e74c3c";
+            }
+        }
+
+        // Logic Modal Chi tiết Nguyên tố
+        const detailModal = document.getElementById('modal-overlay');
+        const closeDetail = document.getElementById('close-modal');
+
+        function openModal(data) {
+            document.getElementById('m-z').innerText = data.z;
+            document.getElementById('m-z-detail').innerText = data.z;
+            document.getElementById('m-sym').innerText = data.sym;
+            document.getElementById('m-sym-detail').innerText = data.sym;
+            document.getElementById('m-name').innerText = data.name;
+            document.getElementById('m-group').innerText = data.group;
+            document.getElementById('m-period').innerText = data.period;
+
+            const modalBox = document.getElementById('modal-box');
+            let catNameVN = "";
+            if(data.category === 'metal') {
+                catNameVN = "Kim loại";
+                modalBox.style.backgroundColor = "var(--color-metal)";
+                modalBox.style.borderColor = "var(--border-metal)";
+            } else if (data.category === 'nonmetal') {
+                catNameVN = "Phi kim";
+                modalBox.style.backgroundColor = "var(--color-nonmetal)";
+                modalBox.style.borderColor = "var(--border-nonmetal)";
+            } else {
+                catNameVN = "Khí hiếm";
+                modalBox.style.backgroundColor = "var(--color-noble)";
+                modalBox.style.borderColor = "var(--border-noble)";
+            }
+            document.getElementById('m-cat').innerText = "Phân loại: " + catNameVN;
+
+            detailModal.classList.add('show');
+        }
+
+        closeDetail.addEventListener('click', () => detailModal.classList.remove('show'));
+        detailModal.addEventListener('click', (e) => {
+            if (e.target === detailModal) detailModal.classList.remove('show');
+        });
+
+        // Khởi chạy
+        window.onload = initTable;
+
+    </script>
+</body>
+</html>
